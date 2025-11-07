@@ -1,13 +1,25 @@
-import psycopg2
+import os
 from flask import Flask, jsonify
 from flask_cors import CORS
+import psycopg2
 from psycopg2.extras import RealDictCursor
 
+# Optional: load .env file if you want local environment support
+from dotenv import load_dotenv
+load_dotenv()
+
 app = Flask(__name__)
-CORS(app)  # ✅ Enables CORS for all routes
+CORS(app)
 
 
-
+# ✅ Load DB config from environment variables
+DB_CONFIG = {
+    "host": os.getenv("DB_HOST"),
+    "port": os.getenv("DB_PORT", "5432"),  # default if not provided
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "dbname": os.getenv("DB_NAME"),
+}
 
 
 def get_db_connection():
@@ -17,30 +29,24 @@ def get_db_connection():
         user=DB_CONFIG["user"],
         password=DB_CONFIG["password"],
         dbname=DB_CONFIG["dbname"],
-        cursor_factory=RealDictCursor,  # ✅ returns rows as dict
+        cursor_factory=RealDictCursor,
     )
 
 
 @app.route("/clients", methods=["GET"])
 def get_clients():
-    """
-    Fetch all clients from the database.
-    Returns JSON list.
-    """
-
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute(
-        """
-        SELECT id, client_id, name, phone_number, TO_CHAR(end_date, 'DD-FMMon-YYYY') AS end_date, status
+    cursor.execute("""
+        SELECT id, client_id, name, phone_number,
+               TO_CHAR(end_date, 'DD-FMMon-YYYY') AS end_date,
+               status
         FROM clients
         ORDER BY status;
-        """
-    )
+    """)
 
     rows = cursor.fetchall()
-
     cursor.close()
     conn.close()
 
@@ -49,24 +55,16 @@ def get_clients():
 
 @app.route("/client/<int:client_id>", methods=["GET"])
 def get_client_by_id(client_id):
-    """
-    Fetch single client by client_id.
-    """
-
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute(
-        """
+    cursor.execute("""
         SELECT id, client_id, name, phone_number, end_date, status
         FROM clients
         WHERE client_id = %s;
-    """,
-        (client_id,),
-    )
+    """, (client_id,))
 
     row = cursor.fetchone()
-
     cursor.close()
     conn.close()
 
