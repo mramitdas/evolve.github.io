@@ -3,141 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User List</title>
+    <title>User Table</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        th.sortable:hover { cursor: pointer; opacity: 0.8; }
+        .arrow { font-size: 10px; line-height: 10px; }
+    </style>
 </head>
 
 <body class="bg-gray-900">
 
-<div class="p-4">
-    <div class="relative overflow-x-auto rounded-lg shadow sm:rounded-lg bg-gray-800">
-
-        <!-- Search bar -->
-        <div class="p-4">
-            <label for="table-search" class="sr-only">Search</label>
-            <div class="relative mt-1">
-                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                              d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 
-                              4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                              clip-rule="evenodd"></path>
-                    </svg>
-                </div>
-                <input type="text" id="table-search"
-                       class="block p-2 pl-10 text-sm text-gray-300 border border-gray-600 rounded-lg 
-                              w-80 bg-gray-700 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
-                       placeholder="Search for users">
+<div class="p-6">
+    
+    <!-- ✅ Centered Search Bar -->
+    <div class="flex justify-center mb-4">
+        <div class="relative">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 
+                        4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                        clip-rule="evenodd"></path>
+                </svg>
             </div>
+            <input 
+                type="text" 
+                id="searchInput"
+                onkeyup="filterTable()"
+                class="block p-2 pl-10 text-sm text-gray-300 border border-gray-600 rounded-lg 
+                    w-96 bg-gray-700 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Search name or phone number..."
+            >
         </div>
+    </div>
 
-        <!-- Table -->
-        <table class="w-full text-sm text-left text-gray-300">
+    <div class="relative overflow-x-auto rounded-lg shadow bg-gray-800">
+
+        <table id="userTable" class="w-full text-sm text-left text-gray-300">
             <thead class="text-xs uppercase bg-gray-700 text-gray-400">
                 <tr>
-                    <th scope="col" class="px-6 py-3">#</th>
-                    <th scope="col" class="px-6 py-3">Name</th>
-                    <th scope="col" class="px-6 py-3">Date</th>
-                    <th scope="col" class="px-6 py-3">Status</th>
+                    <th class="px-6 py-3">#</th>
+
+                    <th class="px-6 py-3">Name</th>
+
+                    <th class="px-6 py-3">Date</th>
+
+                    <!-- ✅ ONLY THIS COLUMN SORTABLE -->
+                    <th class="px-6 py-3 sortable" onclick="sortStatusColumn()">
+                        Status
+                        <div class="inline-block ml-1">
+                            <div class="arrow">▲</div>
+                            <div class="arrow">▼</div>
+                        </div>
+                    </th>
                 </tr>
             </thead>
 
             <tbody>
 
-                <!-- Row 1 -->
                 <tr class="border-b bg-gray-800 border-gray-700">
                     <td class="px-6 py-4">1</td>
-                    <th scope="row" class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full" src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/neil-sims.png" alt="">
+
+                    <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
+                        <img class="w-10 h-10 rounded-full"
+                             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/neil-sims.png">
                         <div class="pl-3">
-                            <div class="text-base font-semibold">Neil Sims</div>
-                            <div class="font-normal text-gray-400">neil.sims@flowbite.com</div>
+                            <div class="text-base font-semibold name">Neil Sims</div>
+                            <div class="text-gray-400 phone">9876543210</div>
                         </div>
                     </th>
-                    <td class="px-6 py-4 text-white">2025-01-02</td>
-                    <td class="px-6 py-4">
-                        <div class="flex items-center">
-                            <div class="h-2.5 w-2.5 rounded-full bg-green-500 mr-2"></div> Online
-                        </div>
+
+                    <td class="px-6 py-4">2025-01-02</td>
+
+                    <td class="px-6 py-4 status">
+                        <span class="status-text">Active</span>
                     </td>
                 </tr>
 
-                <!-- Row 2 -->
                 <tr class="border-b bg-gray-800 border-gray-700">
                     <td class="px-6 py-4">2</td>
-                    <th scope="row" class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full" src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/bonnie-green.png" alt="">
+
+                    <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
+                        <img class="w-10 h-10 rounded-full"
+                             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/bonnie-green.png">
                         <div class="pl-3">
-                            <div class="text-base font-semibold">Bonnie Green</div>
-                            <div class="font-normal text-gray-400">bonnie@flowbite.com</div>
+                            <div class="text-base font-semibold name">Bonnie Green</div>
+                            <div class="text-gray-400 phone">9123456789</div>
                         </div>
                     </th>
-                    <td class="px-6 py-4 text-white">2025-01-05</td>
-                    <td class="px-6 py-4">
-                        <div class="flex items-center">
-                            <div class="h-2.5 w-2.5 rounded-full bg-green-500 mr-2"></div> Online
-                        </div>
+
+                    <td class="px-6 py-4">2025-01-05</td>
+
+                    <td class="px-6 py-4 status">
+                        <span class="status-text">Active</span>
                     </td>
                 </tr>
 
-                <!-- Row 3 -->
                 <tr class="border-b bg-gray-800 border-gray-700">
                     <td class="px-6 py-4">3</td>
-                    <th scope="row" class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full" src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/jese-leos.png" alt="">
+
+                    <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
+                        <img class="w-10 h-10 rounded-full"
+                             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/jese-leos.png">
                         <div class="pl-3">
-                            <div class="text-base font-semibold">Jese Leos</div>
-                            <div class="font-normal text-gray-400">jese@flowbite.com</div>
+                            <div class="text-base font-semibold name">Jese Leos</div>
+                            <div class="text-gray-400 phone">9012345678</div>
                         </div>
                     </th>
-                    <td class="px-6 py-4 text-white">2025-02-01</td>
-                    <td class="px-6 py-4">
-                        <div class="flex items-center">
-                            <div class="h-2.5 w-2.5 rounded-full bg-green-500 mr-2"></div> Online
-                        </div>
+
+                    <td class="px-6 py-4">2025-02-01</td>
+
+                    <td class="px-6 py-4 status">
+                        <span class="status-text">Active</span>
                     </td>
                 </tr>
 
-                <!-- Row 4 -->
                 <tr class="border-b bg-gray-800 border-gray-700">
                     <td class="px-6 py-4">4</td>
-                    <th scope="row" class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full" src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/thomas-lean.png" alt="">
+
+                    <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
+                        <img class="w-10 h-10 rounded-full"
+                             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/thomas-lean.png">
                         <div class="pl-3">
-                            <div class="text-base font-semibold">Thomas Lean</div>
-                            <div class="font-normal text-gray-400">thomes@flowbite.com</div>
+                            <div class="text-base font-semibold name">Thomas Lean</div>
+                            <div class="text-gray-400 phone">7890123456</div>
                         </div>
                     </th>
-                    <td class="px-6 py-4 text-white">2025-02-14</td>
-                    <td class="px-6 py-4">
-                        <div class="flex items-center">
-                            <div class="h-2.5 w-2.5 rounded-full bg-green-500 mr-2"></div> Online
-                        </div>
+
+                    <td class="px-6 py-4">2025-02-14</td>
+
+                    <td class="px-6 py-4 status">
+                        <span class="status-text">Active</span>
                     </td>
                 </tr>
 
-                <!-- Row 5 -->
                 <tr class="bg-gray-800">
                     <td class="px-6 py-4">5</td>
-                    <th scope="row" class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full" src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/leslie-livingston.png" alt="">
+
+                    <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
+                        <img class="w-10 h-10 rounded-full"
+                             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/leslie-livingston.png">
                         <div class="pl-3">
-                            <div class="text-base font-semibold">Leslie Livingston</div>
-                            <div class="font-normal text-gray-400">leslie@flowbite.com</div>
+                            <div class="text-base font-semibold name">Leslie Livingston</div>
+                            <div class="text-gray-400 phone">9988776655</div>
                         </div>
                     </th>
-                    <td class="px-6 py-4 text-white">2025-03-01</td>
-                    <td class="px-6 py-4">
-                        <div class="flex items-center">
-                            <div class="h-2.5 w-2.5 rounded-full bg-red-500 mr-2"></div> Offline
-                        </div>
+
+                    <td class="px-6 py-4">2025-03-01</td>
+
+                    <td class="px-6 py-4 status">
+                        <span class="status-text">Inactive</span>
                     </td>
                 </tr>
 
             </tbody>
         </table>
+
     </div>
 </div>
+
+<script>
+
+/* ✅ Search Filter */
+function filterTable() {
+    const query = document.getElementById("searchInput").value.toLowerCase();
+    const rows = document.querySelectorAll("#userTable tbody tr");
+
+    rows.forEach(row => {
+        const name = row.querySelector(".name").textContent.toLowerCase();
+        const phone = row.querySelector(".phone").textContent.toLowerCase();
+
+        row.style.display = (name.includes(query) || phone.includes(query)) ? "" : "none";
+    });
+}
+
+/* ✅ Sorting ONLY Status Column */
+let statusAsc = true;
+
+function sortStatusColumn() {
+    const table = document.getElementById("userTable");
+    const rows = Array.from(table.querySelectorAll("tbody tr"));
+
+    rows.sort((a, b) => {
+        const aStatus = a.querySelector(".status-text").textContent.trim();
+        const bStatus = b.querySelector(".status-text").textContent.trim();
+
+        return statusAsc
+            ? aStatus.localeCompare(bStatus)
+            : bStatus.localeCompare(aStatus);
+    });
+
+    statusAsc = !statusAsc;
+
+    // Re-append sorted rows
+    const tbody = table.querySelector("tbody");
+    rows.forEach(r => tbody.appendChild(r));
+}
+
+</script>
 
 </body>
 </html>
