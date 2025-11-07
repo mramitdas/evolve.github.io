@@ -1,207 +1,83 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Table</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Secure Table Access</title>
+
+    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Flowbite CSS (optional styling helpers) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
 
     <style>
-        th.sortable:hover { cursor: pointer; opacity: 0.8; }
-        .arrow { font-size: 10px; line-height: 10px; }
+        .blurred {
+            filter: blur(6px);
+            pointer-events: none;
+            user-select: none;
+        }
     </style>
 </head>
+<body class="bg-gray-100 dark:bg-gray-900 transition-all">
 
-<body class="bg-gray-900">
+    <!-- NAVBAR (hidden until logged in) -->
+    <div id="navbar" class="hidden w-full p-4 flex justify-between items-center bg-gray-800 text-white shadow">
+        <h1 class="text-xl font-semibold">Evolve Clients</h1>
 
-<div class="p-6">
-    
-    <!-- ✅ Centered Search Bar -->
-    <div class="flex justify-center mb-4">
-        <div class="relative">
-            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd"
-                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 
-                        4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                        clip-rule="evenodd"></path>
-                </svg>
-            </div>
-            <input 
-                type="text" 
-                id="searchInput"
-                onkeyup="filterTable()"
-                class="block p-2 pl-10 text-sm text-gray-300 border border-gray-600 rounded-lg 
-                    w-96 bg-gray-700 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Search name or phone number..."
-            >
+        <div class="flex gap-4 items-center">
+            <!-- Dark Mode Toggle -->
+            <button id="modeToggle" class="px-3 py-1 rounded bg-gray-600 hover:bg-gray-500">Toggle Dark/Light</button>
+
+            <!-- Logout -->
+            <button id="logoutBtn" class="px-3 py-1 rounded bg-red-600 hover:bg-red-500">Logout</button>
         </div>
     </div>
 
-    <div class="relative overflow-x-auto rounded-lg shadow bg-gray-800">
-
-        <table id="userTable" class="w-full text-sm text-left text-gray-300">
-            <thead class="text-xs uppercase bg-gray-700 text-gray-400">
-                <tr>
-                    <th class="px-6 py-3">#</th>
-
-                    <th class="px-6 py-3">Name</th>
-
-                    <th class="px-6 py-3">Date</th>
-
-                    <!-- ✅ ONLY THIS COLUMN SORTABLE -->
-                    <th class="px-6 py-3 sortable" onclick="sortStatusColumn()">
-                        Status
-                        <div class="inline-block ml-1">
-                            <div class="arrow">▲</div>
-                            <div class="arrow">▼</div>
-                        </div>
-                    </th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                <tr class="border-b bg-gray-800 border-gray-700">
-                    <td class="px-6 py-4">1</td>
-
-                    <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full"
-                             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/neil-sims.png">
-                        <div class="pl-3">
-                            <div class="text-base font-semibold name">Neil Sims</div>
-                            <div class="text-gray-400 phone">9876543210</div>
-                        </div>
-                    </th>
-
-                    <td class="px-6 py-4">2025-01-02</td>
-
-                    <td class="px-6 py-4 status">
-                        <span class="status-text">Active</span>
-                    </td>
-                </tr>
-
-                <tr class="border-b bg-gray-800 border-gray-700">
-                    <td class="px-6 py-4">2</td>
-
-                    <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full"
-                             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/bonnie-green.png">
-                        <div class="pl-3">
-                            <div class="text-base font-semibold name">Bonnie Green</div>
-                            <div class="text-gray-400 phone">9123456789</div>
-                        </div>
-                    </th>
-
-                    <td class="px-6 py-4">2025-01-05</td>
-
-                    <td class="px-6 py-4 status">
-                        <span class="status-text">Active</span>
-                    </td>
-                </tr>
-
-                <tr class="border-b bg-gray-800 border-gray-700">
-                    <td class="px-6 py-4">3</td>
-
-                    <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full"
-                             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/jese-leos.png">
-                        <div class="pl-3">
-                            <div class="text-base font-semibold name">Jese Leos</div>
-                            <div class="text-gray-400 phone">9012345678</div>
-                        </div>
-                    </th>
-
-                    <td class="px-6 py-4">2025-02-01</td>
-
-                    <td class="px-6 py-4 status">
-                        <span class="status-text">Active</span>
-                    </td>
-                </tr>
-
-                <tr class="border-b bg-gray-800 border-gray-700">
-                    <td class="px-6 py-4">4</td>
-
-                    <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full"
-                             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/thomas-lean.png">
-                        <div class="pl-3">
-                            <div class="text-base font-semibold name">Thomas Lean</div>
-                            <div class="text-gray-400 phone">7890123456</div>
-                        </div>
-                    </th>
-
-                    <td class="px-6 py-4">2025-02-14</td>
-
-                    <td class="px-6 py-4 status">
-                        <span class="status-text">Active</span>
-                    </td>
-                </tr>
-
-                <tr class="bg-gray-800">
-                    <td class="px-6 py-4">5</td>
-
-                    <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full"
-                             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/leslie-livingston.png">
-                        <div class="pl-3">
-                            <div class="text-base font-semibold name">Leslie Livingston</div>
-                            <div class="text-gray-400 phone">9988776655</div>
-                        </div>
-                    </th>
-
-                    <td class="px-6 py-4">2025-03-01</td>
-
-                    <td class="px-6 py-4 status">
-                        <span class="status-text">Inactive</span>
-                    </td>
-                </tr>
-
-            </tbody>
-        </table>
-
+    <!-- APP container (will be replaced with table.html on successful login) -->
+    <div id="app" class="blurred p-6 text-center text-gray-700 dark:text-gray-300 min-h-screen">
+        <h1 class="text-3xl font-bold mt-12 dark:text-white">Secure Access</h1>
+        <p class="mt-4 text-lg">Please enter password to view data…</p>
     </div>
-</div>
 
-<script>
+    <!-- Login Modal (shown initially) -->
+    <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-sm">
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 text-center">Enter Password</h3>
 
-/* ✅ Search Filter */
-function filterTable() {
-    const query = document.getElementById("searchInput").value.toLowerCase();
-    const rows = document.querySelectorAll("#userTable tbody tr");
+            <input id="passwordInput" type="password" placeholder="Enter password"
+                   class="w-full p-2 border rounded-lg mb-4 dark:bg-gray-700 dark:text-white" />
 
-    rows.forEach(row => {
-        const name = row.querySelector(".name").textContent.toLowerCase();
-        const phone = row.querySelector(".phone").textContent.toLowerCase();
+            <button id="loginBtn" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                Login
+            </button>
+        </div>
+    </div>
 
-        row.style.display = (name.includes(query) || phone.includes(query)) ? "" : "none";
-    });
-}
+    <!-- Error Modal -->
+    <!-- ❌ Wrong Password Modal -->
+    <div
+      id="errorModal"
+      class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"
+    >
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm"
+      >
+        <h3 class="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
+          Incorrect Password
+        </h3>
+        <p class="text-gray-700 dark:text-gray-300 mb-4">Please try again.</p>
+        <button id="errorCloseBtn" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">OK</button>
+      </div>
+    </div>
 
-/* ✅ Sorting ONLY Status Column */
-let statusAsc = true;
+    <!-- Loader shown while fetching table -->
+    <div id="loader" class="hidden">
+        <div class="fixed inset-0 flex justify-center items-center bg-black/40 z-40">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-white"></div>
+        </div>
+    </div>
 
-function sortStatusColumn() {
-    const table = document.getElementById("userTable");
-    const rows = Array.from(table.querySelectorAll("tbody tr"));
-
-    rows.sort((a, b) => {
-        const aStatus = a.querySelector(".status-text").textContent.trim();
-        const bStatus = b.querySelector(".status-text").textContent.trim();
-
-        return statusAsc
-            ? aStatus.localeCompare(bStatus)
-            : bStatus.localeCompare(aStatus);
-    });
-
-    statusAsc = !statusAsc;
-
-    // Re-append sorted rows
-    const tbody = table.querySelector("tbody");
-    rows.forEach(r => tbody.appendChild(r));
-}
-
-</script>
-
+    <!-- table.js contains all logic (login hashing, simulated API, load table, search, sort, etc.) -->
+    <script type="module" src="table.js"></script>
 </body>
 </html>
