@@ -1,162 +1,66 @@
 <script>
-    // If user has not logged in, redirect to login page
-    if (!localStorage.getItem("loggedIn")) {
-        window.location.href = "index.html";
-    }
+  // If user has not logged in, redirect to login page
+  if (!localStorage.getItem("loggedIn")) {
+    window.location.href = "index.html";
+  }
 </script>
 
 <div class="p-6">
-
-    <!-- Centered Search Bar -->
-    <div class="flex justify-center mb-4">
-        <div class="relative">
-            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd"
-                          d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 
+  <!-- Search Bar -->
+  <div class="flex justify-center mb-4">
+    <div class="relative">
+      <div
+        class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+      >
+        <svg
+          class="w-5 h-5 text-gray-500"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 
                              4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                          clip-rule="evenodd"></path>
-                </svg>
+            clip-rule="evenodd"
+          ></path>
+        </svg>
+      </div>
+
+      <input
+        type="text"
+        id="searchInput"
+        onkeyup="filterTable()"
+        class="block p-2 pl-10 text-sm text-gray-300 border border-gray-600 rounded-lg w-96 bg-gray-700 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
+        placeholder="Search name or phone number..."
+      />
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="relative overflow-x-auto rounded-lg shadow bg-gray-800">
+    <table id="userTable" class="w-full text-sm text-left text-gray-300">
+      <thead class="text-xs uppercase bg-gray-700 text-gray-400">
+        <tr>
+          <th class="px-6 py-3">#</th>
+          <th class="px-6 py-3">Name</th>
+          <th class="px-6 py-3">Date</th>
+
+          <!-- ✅ Sortable Status column -->
+          <th
+            class="px-6 py-3 sortable cursor-pointer select-none"
+            onclick="sortStatusColumn()"
+          >
+            Status
+            <div class="inline-block ml-1">
+              <div class="arrow">▲</div>
+              <div class="arrow">▼</div>
             </div>
+          </th>
+        </tr>
+      </thead>
 
-            <input type="text" id="searchInput" onkeyup="filterTable()"
-                   class="block p-2 pl-10 text-sm text-gray-300 border border-gray-600 rounded-lg 
-                          w-96 bg-gray-700 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
-                   placeholder="Search name or phone number...">
-        </div>
-    </div>
-
-    <div class="relative overflow-x-auto rounded-lg shadow bg-gray-800">
-
-        <table id="userTable" class="w-full text-sm text-left text-gray-300">
-            <thead class="text-xs uppercase bg-gray-700 text-gray-400">
-                <tr>
-                    <th class="px-6 py-3">#</th>
-                    <th class="px-6 py-3">Name</th>
-                    <th class="px-6 py-3">Date</th>
-                    <th class="px-6 py-3 sortable" onclick="sortStatusColumn()">
-                        Status
-                        <div class="inline-block ml-1">
-                            <div class="arrow">▲</div>
-                            <div class="arrow">▼</div>
-                        </div>
-                    </th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                <!-- ROW 1 -->
-                <tr class="border-b bg-gray-800 border-gray-700">
-                    <td class="px-6 py-4">1</td>
-                    <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full"
-                             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/neil-sims.png" alt="Neil">
-                        <div class="pl-3">
-                            <div class="text-base font-semibold name">Neil Sims</div>
-                            <div class="text-gray-400 phone">9876543210</div>
-                        </div>
-                    </th>
-                    <td class="px-6 py-4">2025-01-02</td>
-
-                    <!-- ✅ STATUS WITH DOT -->
-                    <td class="px-6 py-4 status">
-                        <div class="flex items-center gap-2">
-                            <span class="h-3 w-3 rounded-full bg-green-500"></span>
-                            <span class="status-text text-green-400">Active</span>
-                        </div>
-                    </td>
-                </tr>
-
-                <!-- ROW 2 -->
-                <tr class="border-b bg-gray-800 border-gray-700">
-                    <td class="px-6 py-4">2</td>
-                    <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full"
-                             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/bonnie-green.png" alt="Bonnie">
-                        <div class="pl-3">
-                            <div class="text-base font-semibold name">Bonnie Green</div>
-                            <div class="text-gray-400 phone">9123456789</div>
-                        </div>
-                    </th>
-                    <td class="px-6 py-4">2025-01-05</td>
-
-                    <!-- ✅ STATUS WITH DOT -->
-                    <td class="px-6 py-4 status">
-                        <div class="flex items-center gap-2">
-                            <span class="h-3 w-3 rounded-full bg-green-500"></span>
-                            <span class="status-text text-green-400">Active</span>
-                        </div>
-                    </td>
-                </tr>
-
-                <!-- ROW 3 -->
-                <tr class="border-b bg-gray-800 border-gray-700">
-                    <td class="px-6 py-4">3</td>
-                    <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full"
-                             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/jese-leos.png" alt="Jese">
-                        <div class="pl-3">
-                            <div class="text-base font-semibold name">Jese Leos</div>
-                            <div class="text-gray-400 phone">9012345678</div>
-                        </div>
-                    </th>
-                    <td class="px-6 py-4">2025-02-01</td>
-
-                    <!-- ✅ STATUS WITH DOT -->
-                    <td class="px-6 py-4 status">
-                        <div class="flex items-center gap-2">
-                            <span class="h-3 w-3 rounded-full bg-green-500"></span>
-                            <span class="status-text text-green-400">Active</span>
-                        </div>
-                    </td>
-                </tr>
-
-                <!-- ROW 4 -->
-                <tr class="border-b bg-gray-800 border-gray-700">
-                    <td class="px-6 py-4">4</td>
-                    <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full"
-                             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/thomas-lean.png" alt="Thomas">
-                        <div class="pl-3">
-                            <div class="text-base font-semibold name">Thomas Lean</div>
-                            <div class="text-gray-400 phone">7890123456</div>
-                        </div>
-                    </th>
-                    <td class="px-6 py-4">2025-02-14</td>
-
-                    <!-- ✅ STATUS WITH DOT -->
-                    <td class="px-6 py-4 status">
-                        <div class="flex items-center gap-2">
-                            <span class="h-3 w-3 rounded-full bg-green-500"></span>
-                            <span class="status-text text-green-400">Active</span>
-                        </div>
-                    </td>
-                </tr>
-
-                <!-- ROW 5 -->
-                <tr class="bg-gray-800">
-                    <td class="px-6 py-4">5</td>
-                    <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full"
-                             src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/leslie-livingston.png" alt="Leslie">
-                        <div class="pl-3">
-                            <div class="text-base font-semibold name">Leslie Livingston</div>
-                            <div class="text-gray-400 phone">9988776655</div>
-                        </div>
-                    </th>
-                    <td class="px-6 py-4">2025-03-01</td>
-
-                    <!-- ✅ STATUS WITH DOT (INACTIVE) -->
-                    <td class="px-6 py-4 status">
-                        <div class="flex items-center gap-2">
-                            <span class="h-3 w-3 rounded-full bg-red-500"></span>
-                            <span class="status-text text-red-400">Inactive</span>
-                        </div>
-                    </td>
-                </tr>
-
-            </tbody>
-        </table>
-    </div>
+      <!-- ✅ EMPTY — API fills this -->
+      <tbody></tbody>
+    </table>
+  </div>
 </div>
