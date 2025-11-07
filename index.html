@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Table</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Flowbite CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
+
+</head>
+<body class="bg-gray-900">
+
+<div class="relative overflow-x-auto shadow-md sm:rounded-lg m-6">
+    <div class="flex items-center justify-between flex-column flex-wrap md:flex-row space-y-4 md:space-y-0 pb-4 bg-gray-900">
+        <div>
+            <button id="dropdownActionButton" data-dropdown-toggle="dropdownAction"
+                class="inline-flex items-center text-gray-300 bg-gray-800 border border-gray-700 focus:outline-none hover:bg-gray-700 focus:ring-4 focus:ring-gray-700 font-medium rounded-lg text-sm px-3 py-1.5"
+                type="button">
+                <span class="sr-only">Action button</span>
+                Action
+                <svg class="w-2.5 h-2.5 ms-2.5" aria-hidden="true" fill="none" viewBox="0 0 10 6">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="m1 1 4 4 4-4" />
+                </svg>
+            </button>
+
+            <!-- Dropdown menu -->
+            <div id="dropdownAction"
+                class="z-10 hidden bg-gray-800 divide-y divide-gray-700 rounded-lg shadow w-44">
+                <ul class="py-1 text-sm text-gray-200">
+                    <li><a href="#" class="block px-4 py-2 hover:bg-gray-700">Reward</a></li>
+                    <li><a href="#" class="block px-4 py-2 hover:bg-gray-700">Promote</a></li>
+                    <li><a href="#" class="block px-4 py-2 hover:bg-gray-700">Activate account</a></li>
+                </ul>
+                <div class="py-1">
+                    <a href="#" class="block px-4 py-2 text-sm text-red-400 hover:bg-gray-700">Delete User</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="relative">
+            <div class="absolute inset-y-0 flex items-center ps-3 pointer-events-none">
+                <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 20 20">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                </svg>
+            </div>
+            <input type="text" id="table-search-users"
+                class="block p-2 ps-10 text-sm text-gray-100 border border-gray-700 rounded-lg w-80 bg-gray-800 placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Search for users">
+        </div>
+    </div>
+
+    <!-- Table -->
+    <table class="w-full text-sm text-left text-gray-400">
+        <thead class="text-xs uppercase bg-gray-800 text-gray-400">
+            <tr>
+                <th class="p-4">
+                    <input id="checkbox-all-search" type="checkbox"
+                        class="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 rounded">
+                </th>
+                <th class="px-6 py-3">Name</th>
+                <th class="px-6 py-3">Position</th>
+                <th class="px-6 py-3">Status</th>
+                <th class="px-6 py-3">Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            <!-- Row 1 -->
+            <tr class="bg-gray-900 border-b border-gray-800 hover:bg-gray-800">
+                <td class="p-4">
+                    <input id="check-1" type="checkbox"
+                        class="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 rounded">
+                </td>
+                <th scope="row" class="flex items-center px-6 py-4 text-white whitespace-nowrap">
+                    <img class="w-10 h-10 rounded-full"
+                        src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/neil-sims.png" alt="Neil">
+                    <div class="ps-3">
+                        <div class="text-base font-semibold">Neil Sims</div>
+                        <div class="text-gray-400 text-sm">neil.sims@flowbite.com</div>
+                    </div>
+                </th>
+                <td class="px-6 py-4">React Developer</td>
+                <td class="px-6 py-4">
+                    <div class="flex items-center">
+                        <span class="h-2.5 w-2.5 rounded-full bg-green-500 me-2"></span> Online
+                    </div>
+                </td>
+                <td class="px-6 py-4">
+                    <a class="font-medium text-blue-500 hover:underline" href="#">Edit user</a>
+                </td>
+            </tr>
+
+            <!-- Row 2 -->
+            <tr class="bg-gray-900 border-b border-gray-800 hover:bg-gray-800">
+                <td class="p-4">
+                    <input id="check-2" type="checkbox"
+                        class="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 rounded">
+                </td>
+                <th scope="row" class="flex items-center px-6 py-4 text-white whitespace-nowrap">
+                    <img class="w-10 h-10 rounded-full"
+                        src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/bonnie-green.png" alt="Bonnie">
+                    <div class="ps-3">
+                        <div class="text-base font-semibold">Bonnie Green</div>
+                        <div class="text-gray-400 text-sm">bonnie@flowbite.com</div>
+                    </div>
+                </th>
+                <td class="px-6 py-4">Designer</td>
+                <td class="px-6 py-4">
+                    <div class="flex items-center">
+                        <span class="h-2.5 w-2.5 rounded-full bg-green-500 me-2"></span> Online
+                    </div>
+                </td>
+                <td class="px-6 py-4">
+                    <a class="font-medium text-blue-500 hover:underline" href="#">Edit user</a>
+                </td>
+            </tr>
+
+            <!-- Row 3 -->
+            <tr class="bg-gray-900 border-b border-gray-800 hover:bg-gray-800">
+                <td class="p-4">
+                    <input id="check-3" type="checkbox"
+                        class="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 rounded">
+                </td>
+                <th scope="row" class="flex items-center px-6 py-4 text-white whitespace-nowrap">
+                    <img class="w-10 h-10 rounded-full"
+                        src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/jese-leos.png" alt="Jese">
+                    <div class="ps-3">
+                        <div class="text-base font-semibold">Jese Leos</div>
+                        <div class="text-gray-400 text-sm">jese@flowbite.com</div>
+                    </div>
+                </th>
+                <td class="px-6 py-4">Vue JS Developer</td>
+                <td class="px-6 py-4">
+                    <div class="flex items-center">
+                        <span class="h-2.5 w-2.5 rounded-full bg-green-500 me-2"></span> Online
+                    </div>
+                </td>
+                <td class="px-6 py-4">
+                    <a class="font-medium text-blue-500 hover:underline" href="#">Edit user</a>
+                </td>
+            </tr>
+
+            <!-- Row 4 -->
+            <tr class="bg-gray-900 border-b border-gray-800 hover:bg-gray-800">
+                <td class="p-4">
+                    <input id="check-4" type="checkbox"
+                        class="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 rounded">
+                </td>
+                <th scope="row" class="flex items-center px-6 py-4 text-white whitespace-nowrap">
+                    <img class="w-10 h-10 rounded-full"
+                        src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/thomas-lean.png" alt="Thomas">
+                    <div class="ps-3">
+                        <div class="text-base font-semibold">Thomas Lean</div>
+                        <div class="text-gray-400 text-sm">thomes@flowbite.com</div>
+                    </div>
+                </th>
+                <td class="px-6 py-4">UI/UX Engineer</td>
+                <td class="px-6 py-4">
+                    <div class="flex items-center">
+                        <span class="h-2.5 w-2.5 rounded-full bg-green-500 me-2"></span> Online
+                    </div>
+                </td>
+                <td class="px-6 py-4">
+                    <a class="font-medium text-blue-500 hover:underline" href="#">Edit user</a>
+                </td>
+            </tr>
+
+            <!-- Row 5 -->
+            <tr class="bg-gray-900 hover:bg-gray-800">
+                <td class="p-4">
+                    <input id="check-5" type="checkbox"
+                        class="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 rounded">
+                </td>
+                <th scope="row" class="flex items-center px-6 py-4 text-white whitespace-nowrap">
+                    <img class="w-10 h-10 rounded-full"
+                        src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/leslie-livingston.png"
+                        alt="Leslie">
+                    <div class="ps-3">
+                        <div class="text-base font-semibold">Leslie Livingston</div>
+                        <div class="text-gray-400 text-sm">leslie@flowbite.com</div>
+                    </div>
+                </th>
+                <td class="px-6 py-4">SEO Specialist</td>
+                <td class="px-6 py-4">
+                    <div class="flex items-center">
+                        <span class="h-2.5 w-2.5 rounded-full bg-red-500 me-2"></span> Offline
+                    </div>
+                </td>
+                <td class="px-6 py-4">
+                    <a class="font-medium text-blue-500 hover:underline" href="#">Edit user</a>
+                </td>
+            </tr>
+
+        </tbody>
+    </table>
+</div>
+
+<!-- Flowbite JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+
+</body>
+</html>
