@@ -45,7 +45,7 @@ async function fetchTableData() {
     if (!tableBody) return;
 
     try {
-        const res = await fetch("https://3f8409b38744.ngrok-free.app/clients");
+        const res = await fetch("https://evolve-dzlb.onrender.com/clients");
         const data = await res.json();
 
         tableBody.innerHTML = ""; // clear existing rows
