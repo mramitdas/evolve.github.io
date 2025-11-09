@@ -78,6 +78,12 @@ async function loadTablePage() {
     }
   }
   
+  // Defensive binding for Date header click (in case inline onclick is blocked)
+  const dateHeader = document.getElementById("dateHeader");
+  if (dateHeader) {
+    dateHeader.addEventListener("click", window.sortDateColumn);
+  }
+  
   // ✅ Initialize filter toggle script AFTER loading HTML
   initFilterToggle();
 
@@ -98,6 +104,10 @@ function initFilterToggle() {
 
   if (!toggleBtn || !filterSection || !chevronIcon) return; // Prevent crash
 
+  // Ensure collapsed section doesn't intercept clicks and hides overflow
+  filterSection.style.overflow = "hidden";
+  filterSection.style.pointerEvents = "none";
+
   let isOpen = false;
 
   toggleBtn.addEventListener("click", () => {
@@ -106,10 +116,12 @@ function initFilterToggle() {
     if (isOpen) {
       filterSection.style.maxHeight = filterSection.scrollHeight + "px";
       filterSection.style.opacity = "1";
+      filterSection.style.pointerEvents = "auto";
       chevronIcon.style.transform = "rotate(180deg)";
     } else {
       filterSection.style.maxHeight = "0";
       filterSection.style.opacity = "0";
+      filterSection.style.pointerEvents = "none";
       chevronIcon.style.transform = "rotate(0deg)";
     }
   });
@@ -171,12 +183,16 @@ async function fetchTableData() {
     data.forEach((item, index) => {
       const statusLower = item.status.toLowerCase();
       const isActive = statusLower === "active";
+      const endDateRaw = item.end_date;
+      const endDateStr =
+        endDateRaw && String(endDateRaw).toLowerCase() !== "null" ? String(endDateRaw) : "";
+      const endDateDisplay = endDateStr || "-";
 
       const imgUrl = `https://kcusrobnqpiqqiycwser.supabase.co/storage/v1/object/public/client_images/${item.phone_number}.png`;
 
       /* ✅ DESKTOP TABLE ROWS */
       const row = `
-                <tr class="border-b bg-gray-800 border-gray-700" data-status="${isActive ? "active" : "inactive"}" data-date="${item.end_date || ""}" data-gender="${(item.gender || "").toLowerCase()}">
+                <tr class="border-b bg-gray-800 border-gray-700" data-status="${isActive ? "active" : "inactive"}" data-date="${endDateStr}" data-gender="${(item.gender || "").toLowerCase()}" data-index="${index}">
                     <td class="px-6 py-4">${index + 1}</td>
 
                     <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
@@ -191,7 +207,7 @@ async function fetchTableData() {
                         </div>
                     </th>
 
-                    <td class="px-6 py-4">${item.end_date}</td>
+                    <td class="px-6 py-4">${endDateDisplay}</td>
 
                     <td class="px-6 py-4 status">
                         <div class="flex items-center gap-2">
@@ -212,7 +228,7 @@ async function fetchTableData() {
       /* ✅ MOBILE CARD VIEW */
       if (mobileList) {
         const card = `
-          <div class="bg-gray-800 rounded-xl p-4 shadow flex items-center gap-4" data-status="${isActive ? "active" : "inactive"}" data-date="${item.end_date || ""}" data-gender="${(item.gender || "").toLowerCase()}">
+          <div class="bg-gray-800 rounded-xl p-4 shadow flex items-center gap-4" data-status="${isActive ? "active" : "inactive"}" data-date="${endDateStr}" data-gender="${(item.gender || "").toLowerCase()}">
               <div class="text-gray-400 font-bold text-lg w-6">${
                 index + 1
               }</div>
@@ -226,7 +242,7 @@ async function fetchTableData() {
                   }</p>
                   <p class="${
                     isActive ? "text-green-400" : "text-red-400"
-                  } text-xs mt-1">${item.end_date || "-"}</p>
+                  } text-xs mt-1">${endDateDisplay}</p>
               </div>
           </div>
         `;
@@ -293,17 +309,33 @@ window.filterTable = function () {
   function parseDMY(str) {
     const s = (str || "").trim();
     if (!s) return null;
-    const parts = s.split("-");
-    if (parts.length !== 3) return null;
-    const [dd, mm, yyyy] = parts;
-    const d = new Date(parseInt(yyyy, 10), parseInt(mm, 10) - 1, parseInt(dd, 10));
+    // Accept dd-mm-yyyy, dd/mm/yyyy, dd.mm.yyyy (and spaces)
+    const m = s.match(/^(\d{1,2})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{2,4})$/);
+    if (!m) return null;
+    let dd = parseInt(m[1], 10);
+    let mm = parseInt(m[2], 10);
+    let yyyy = parseInt(m[3], 10);
+    if (yyyy < 100) yyyy += 2000; // normalize 2-digit years
+    const d = new Date(yyyy, mm - 1, dd);
     return isNaN(d.getTime()) ? null : normalizeYMD(d);
   }
   function parseDateFlexible(str) {
-    // Try dd-mm-yyyy first, then fallback to Date()
-    const d1 = parseDMY(str);
+    const s = (str || "").trim();
+    if (!s) return null;
+    // Try dd-mm-yyyy first (and variants)
+    const d1 = parseDMY(s);
     if (d1) return d1;
-    const d2 = new Date(str);
+    // Try ISO-like yyyy-mm-dd (and variants with / . or spaces)
+    const mIso = s.match(/^(\d{4})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{1,2})$/);
+    if (mIso) {
+      const yyyy = parseInt(mIso[1], 10);
+      const mm = parseInt(mIso[2], 10);
+      const dd = parseInt(mIso[3], 10);
+      const d = new Date(yyyy, mm - 1, dd);
+      if (!isNaN(d.getTime())) return normalizeYMD(d);
+    }
+    // Fallback to native Date parser
+    const d2 = new Date(s);
     return isNaN(d2.getTime()) ? null : normalizeYMD(d2);
   }
 
@@ -378,7 +410,7 @@ window.filterTable = function () {
   });
 };
 
-// ✅ Sort Status column (Active / Inactive)
+ // ✅ Sort Status column (Active / Inactive)
 let statusAsc = true;
 window.sortStatusColumn = function () {
   const table = document.getElementById("userTable");
@@ -399,4 +431,98 @@ window.sortStatusColumn = function () {
 
   const tbody = table.querySelector("tbody");
   rows.forEach((r) => tbody.appendChild(r));
+};
+
+// ✅ Sort Date column (dd-mm-yyyy)
+let dateAsc = true;
+let isSortingDate = false;
+window.sortDateColumn = function () {
+  if (isSortingDate) return;
+  isSortingDate = true;
+
+  const table = document.getElementById("userTable");
+  if (!table) {
+    isSortingDate = false;
+    return;
+  }
+  const tbody = table.querySelector("tbody");
+  const rows = Array.from(tbody.querySelectorAll("tr"));
+
+  const normalizeYMD = (d) =>
+    d ? new Date(d.getFullYear(), d.getMonth(), d.getDate()) : null;
+
+  function parseDate(str) {
+    const s = (str || "").trim();
+    if (!s || s === "-") return null;
+
+    // dd-mm-yyyy, dd/mm/yyyy, dd.mm.yyyy, dd mm yyyy
+    let m = s.match(/^(\d{1,2})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{2,4})$/);
+    if (m) {
+      let dd = parseInt(m[1], 10);
+      let mm = parseInt(m[2], 10);
+      let yyyy = parseInt(m[3], 10);
+      if (yyyy < 100) yyyy += 2000;
+      const d = new Date(yyyy, mm - 1, dd);
+      return isNaN(d.getTime()) ? null : normalizeYMD(d);
+    }
+
+    // yyyy-mm-dd (allow / . or space)
+    m = s.match(/^(\d{4})[\/\-\.\s](\d{1,2})[\/\-\.\s](\d{1,2})$/);
+    if (m) {
+      const yyyy = parseInt(m[1], 10);
+      const mm = parseInt(m[2], 10);
+      const dd = parseInt(m[3], 10);
+      const d = new Date(yyyy, mm - 1, dd);
+      return isNaN(d.getTime()) ? null : normalizeYMD(d);
+    }
+
+    // ISO with time, e.g., 2025-11-10T00:00:00Z
+    const dIso = new Date(s);
+    return isNaN(dIso.getTime()) ? null : normalizeYMD(dIso);
+  }
+
+  const keyed = rows.map((el, idx) => {
+    const raw =
+      el.dataset.date ||
+      el.querySelector("td:nth-child(3)")?.textContent?.trim() ||
+      "";
+    const dt = parseDate(raw);
+    const origIdx = parseInt(el.dataset.index ?? idx, 10);
+    return { el, dt, origIdx };
+  });
+
+  keyed.sort((a, b) => {
+    const aNull = a.dt === null;
+    const bNull = b.dt === null;
+
+    if (aNull && bNull) {
+      // Stable for two nulls
+      return a.origIdx - b.origIdx;
+    }
+    if (aNull || bNull) {
+      // Asc: nulls at end; Desc: nulls at start
+      if (dateAsc) return aNull ? 1 : -1;
+      return aNull ? -1 : 1;
+    }
+
+    const diff = a.dt - b.dt;
+    if (diff === 0) {
+      // Stable tie-breaker by original index
+      return a.origIdx - b.origIdx;
+    }
+    return dateAsc ? diff : -diff;
+  });
+
+  // Apply new order
+  keyed.forEach(({ el }) => tbody.appendChild(el));
+
+  // Renumber the serial column (#) after sorting so it reflects the new order
+  Array.from(tbody.querySelectorAll("tr")).forEach((tr, i) => {
+    const serialCell = tr.querySelector("td:nth-child(1)");
+    if (serialCell) serialCell.textContent = String(i + 1);
+  });
+
+  // Toggle direction for the next click and release guard
+  dateAsc = !dateAsc;
+  isSortingDate = false;
 };
