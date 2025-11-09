@@ -78,10 +78,14 @@ async function loadTablePage() {
     }
   }
   
-  // Defensive binding for Date header click (in case inline onclick is blocked)
+  // Defensive binding for Date and Name header click (in case inline onclick is blocked)
   const dateHeader = document.getElementById("dateHeader");
   if (dateHeader) {
     dateHeader.addEventListener("click", window.sortDateColumn);
+  }
+  const nameHeader = document.getElementById("nameHeader");
+  if (nameHeader) {
+    nameHeader.addEventListener("click", window.sortNameColumn);
   }
   
   // ✅ Initialize filter toggle script AFTER loading HTML
@@ -525,4 +529,61 @@ window.sortDateColumn = function () {
   // Toggle direction for the next click and release guard
   dateAsc = !dateAsc;
   isSortingDate = false;
+};
+
+// ✅ Sort Name column (alphabetical, stable, case-insensitive)
+let nameAsc = true;
+let isSortingName = false;
+window.sortNameColumn = function () {
+  if (isSortingName) return;
+  isSortingName = true;
+
+  const table = document.getElementById("userTable");
+  if (!table) {
+    isSortingName = false;
+    return;
+  }
+  const tbody = table.querySelector("tbody");
+  const rows = Array.from(tbody.querySelectorAll("tr"));
+
+  const keyed = rows.map((el, idx) => {
+    const nameText = el.querySelector(".name")?.textContent?.trim() || "";
+    const key = nameText.toLowerCase();
+    const origIdx = parseInt(el.dataset.index ?? idx, 10);
+    return { el, key, origIdx };
+  });
+
+  keyed.sort((a, b) => {
+    const aEmpty = !a.key;
+    const bEmpty = !b.key;
+
+    if (aEmpty && bEmpty) {
+      // Keep original relative order for two empties
+      return a.origIdx - b.origIdx;
+    }
+    if (aEmpty || bEmpty) {
+      // Asc: empty at end; Desc: empty at start
+      if (nameAsc) return aEmpty ? 1 : -1;
+      return aEmpty ? -1 : 1;
+    }
+
+    const cmp = a.key.localeCompare(b.key, undefined, { sensitivity: "base", numeric: true });
+    if (cmp === 0) {
+      // Stable tie-breaker
+      return a.origIdx - b.origIdx;
+    }
+    return nameAsc ? cmp : -cmp;
+  });
+
+  // Apply new order
+  keyed.forEach(({ el }) => tbody.appendChild(el));
+
+  // Renumber the serial column (#) after sorting
+  Array.from(tbody.querySelectorAll("tr")).forEach((tr, i) => {
+    const serialCell = tr.querySelector("td:nth-child(1)");
+    if (serialCell) serialCell.textContent = String(i + 1);
+  });
+
+  nameAsc = !nameAsc;
+  isSortingName = false;
 };

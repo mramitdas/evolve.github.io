@@ -19,7 +19,16 @@
         <thead class="text-xs uppercase bg-gray-700 text-gray-400">
           <tr>
             <th class="px-6 py-3">#</th>
-            <th class="px-6 py-3">Name</th>
+            <th
+              id="nameHeader"
+              class="px-6 py-3 sortable cursor-pointer select-none"
+            >
+              Name
+              <div class="inline-block ml-1">
+                <div class="arrow">▲</div>
+                <div class="arrow">▼</div>
+              </div>
+            </th>
             <th
               id="dateHeader"
               class="px-6 py-3 sortable cursor-pointer select-none"
