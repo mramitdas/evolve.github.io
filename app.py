@@ -41,7 +41,7 @@ def get_clients():
     cursor.execute("""
         SELECT id, client_id, name, phone_number,
                TO_CHAR(end_date, 'DD-FMMon-YYYY') AS end_date,
-               status
+               status, gender
         FROM clients
         ORDER BY status;
     """)
