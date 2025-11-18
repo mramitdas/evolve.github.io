@@ -197,7 +197,7 @@ async function fetchTableData() {
       /* ✅ DESKTOP TABLE ROWS */
       const row = `
                 <tr class="border-b bg-gray-800 border-gray-700" data-status="${isActive ? "active" : "inactive"}" data-date="${endDateStr}" data-gender="${(item.gender || "").toLowerCase()}" data-index="${index}">
-                    <td class="px-6 py-4">${index + 1}</td>
+                    <td class="px-6 py-4 serial">${index + 1}</td>
 
                     <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
                         <img class="w-10 h-10 rounded-full" src="${imgUrl}">
@@ -233,7 +233,7 @@ async function fetchTableData() {
       if (mobileList) {
         const card = `
           <div class="bg-gray-800 rounded-xl p-4 shadow flex items-center gap-4" data-status="${isActive ? "active" : "inactive"}" data-date="${endDateStr}" data-gender="${(item.gender || "").toLowerCase()}">
-              <div class="text-gray-400 font-bold text-lg w-6">${
+              <div class="serial text-gray-400 font-bold text-lg w-6">${
                 index + 1
               }</div>
 
@@ -412,7 +412,32 @@ window.filterTable = function () {
 
     card.style.display = matchesQuery && matchesStatus && matchesDate && matchesGender ? "flex" : "none";
   });
+
+  // Renumber serials after any filter change
+  renumberSerials();
 };
+
+function renumberSerials() {
+  try {
+    // Desktop table: renumber only visible rows
+    const visibleRows = Array.from(document.querySelectorAll("#userTable tbody tr"))
+      .filter(r => r.style.display !== "none");
+    visibleRows.forEach((tr, i) => {
+      const serialCell = tr.querySelector("td:nth-child(1)");
+      if (serialCell) serialCell.textContent = String(i + 1);
+    });
+
+    // Mobile cards: renumber only visible cards
+    const visibleCards = Array.from(document.querySelectorAll("#mobileList > div"))
+      .filter(c => c.style.display !== "none");
+    visibleCards.forEach((card, i) => {
+      const serialEl = card.querySelector(".serial") || card.querySelector(".text-gray-400.font-bold.text-lg.w-6");
+      if (serialEl) serialEl.textContent = String(i + 1);
+    });
+  } catch (e) {
+    console.warn("renumberSerials failed:", e);
+  }
+}
 
  // ✅ Sort Status column (Active / Inactive)
 let statusAsc = true;
