@@ -16,6 +16,142 @@ async function sha256(text) {
     .join("");
 }
 
+/** Encryption helpers (AES-GCM) **/
+function hexToBytes(hex) {
+  if (!hex || hex.length % 2 !== 0) throw new Error("Invalid hex string");
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return out;
+}
+function bytesToHex(buf) {
+  const a = new Uint8Array(buf);
+  return Array.from(a)
+    .slice(0, 16)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+function guessMimeFromBytes(buf) {
+  const a = new Uint8Array(buf);
+  if (a[0] === 0x89 && a[1] === 0x50 && a[2] === 0x4e && a[3] === 0x47) return "image/png"; // PNG
+  if (a[0] === 0xff && a[1] === 0xd8 && a[2] === 0xff) return "image/jpeg"; // JPEG
+  return "application/octet-stream";
+}
+
+async function tryDecryptWithLayout(encBuffer, keyBytes, layout) {
+  // layout: "iv|cipher|tag" or "iv|tag|cipher"
+  const total = encBuffer.byteLength;
+  if (total < 12 + 16) throw new Error("Encrypted buffer too short (<28 bytes).");
+  let iv, ciphertext, tag;
+  if (layout === "iv|cipher|tag") {
+    iv = encBuffer.slice(0, 12);
+    tag = encBuffer.slice(total - 16, total);
+    ciphertext = encBuffer.slice(12, total - 16);
+  } else if (layout === "iv|tag|cipher") {
+    iv = encBuffer.slice(0, 12);
+    tag = encBuffer.slice(12, 28); // 12..28
+    ciphertext = encBuffer.slice(28);
+  } else {
+    throw new Error("Unknown layout");
+  }
+
+  console.log(`[tryDecrypt] layout=${layout} total=${total} iv_len=${iv.byteLength} cipher_len=${ciphertext.byteLength} tag_len=${tag.byteLength}`);
+  console.log(`[tryDecrypt] iv(hex)=${bytesToHex(iv)} tag(hex)=${bytesToHex(tag)}`);
+
+  // WebCrypto expects ciphertext||tag as input
+  const cView = new Uint8Array(ciphertext);
+  const tView = new Uint8Array(tag);
+  const combined = new Uint8Array(cView.length + tView.length);
+  combined.set(cView, 0);
+  combined.set(tView, cView.length);
+
+  const cryptoKey = await crypto.subtle.importKey("raw", keyBytes, { name: "AES-GCM" }, false, ["decrypt"]);
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(iv) }, cryptoKey, combined.buffer);
+  return plain; // ArrayBuffer (throws if auth fails)
+}
+
+async function decryptImageFromUrl(url, hexKey) {
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
+  const encBuffer = await resp.arrayBuffer();
+  const keyBytes = hexToBytes(hexKey);
+  if (![16, 24, 32].includes(keyBytes.length)) throw new Error("Key must be 16/24/32 bytes (32/48/64 hex chars)");
+
+  let plainBuffer = null;
+  try {
+    plainBuffer = await tryDecryptWithLayout(encBuffer, keyBytes, "iv|cipher|tag");
+  } catch (e1) {
+    try {
+      plainBuffer = await tryDecryptWithLayout(encBuffer, keyBytes, "iv|tag|cipher");
+    } catch (e2) {
+      throw new Error("Decryption failed for both layouts");
+    }
+  }
+
+  const mime = guessMimeFromBytes(plainBuffer);
+  const blob = new Blob([plainBuffer], { type: mime });
+  return URL.createObjectURL(blob);
+}
+
+const TRANSPARENT_PX =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAuMBgQm6BecAAAAASUVORK5CYII=";
+
+async function setDecryptedImg(imgEl, encUrl, hexKey) {
+  try {
+    imgEl.src = TRANSPARENT_PX;
+    await loadImage(encUrl, hexKey, imgEl);
+  } catch (e) {
+    console.warn("Image decrypt failed:", e);
+    imgEl.src = TRANSPARENT_PX;
+  }
+}
+
+// Optional demo helper from snippet; unused here but kept for parity
+async function loadImage(urlOverride, hexKeyOverride, imgElOverride) {
+  const url = urlOverride ?? document.getElementById("urlInput")?.value?.trim();
+  const hexKey = hexKeyOverride ?? document.getElementById("keyInput")?.value?.trim();
+  const imgEl = imgElOverride ?? document.getElementById("outImg");
+  if (!url || !hexKey || !imgEl) {
+    throw new Error("Missing URL, hex key or target <img> element");
+  }
+
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
+    const encBuffer = await resp.arrayBuffer();
+    console.log("[loadImage] fetched bytes:", encBuffer.byteLength);
+
+    const keyBytes = hexToBytes(hexKey);
+    if (![16,24,32].includes(keyBytes.length)) throw new Error("Key must be 16/24/32 bytes (32/48/64 hex chars)");
+
+    let plainBuffer = null;
+    let usedLayout = null;
+    try {
+      plainBuffer = await tryDecryptWithLayout(encBuffer, keyBytes, "iv|cipher|tag");
+      usedLayout = "iv|cipher|tag";
+    } catch (e1) {
+      console.warn("[loadImage] decrypt with iv|cipher|tag failed:", e1.message);
+      try {
+        plainBuffer = await tryDecryptWithLayout(encBuffer, keyBytes, "iv|tag|cipher");
+        usedLayout = "iv|tag|cipher";
+      } catch (e2) {
+        console.error("[loadImage] fallback decrypt failed:", e2);
+        throw new Error("Decryption failed for both common layouts. See console for details.");
+      }
+    }
+
+    console.log(`[loadImage] decryption succeeded using layout=${usedLayout}`);
+    const mime = guessMimeFromBytes(plainBuffer);
+    console.log("[loadImage] guessed mime", mime);
+
+    const blob = new Blob([plainBuffer], { type: mime });
+    imgEl.src = URL.createObjectURL(blob);
+  } catch (e) {
+    console.error(e);
+    // No alert in app flow; bubble up to caller
+    throw e;
+  }
+}
+
 // DOM elements
 const loginModal = document.getElementById("loginModal");
 const errorModal = document.getElementById("errorModal");
@@ -184,15 +320,16 @@ async function fetchTableData() {
     tableBody.innerHTML = "";
     if (mobileList) mobileList.innerHTML = "";
 
+    const hexKey = (config && config.HEX_KEY) || "29cd3a5128416c678ac33b459f5c466c23913446d8666463b5d867c94c6bf944";
+
     data.forEach((item, index) => {
-      const statusLower = item.status.toLowerCase();
+      const statusLower = (item.status || "").toLowerCase();
       const isActive = statusLower === "active";
       const endDateRaw = item.end_date;
-      const endDateStr =
-        endDateRaw && String(endDateRaw).toLowerCase() !== "null" ? String(endDateRaw) : "";
+      const endDateStr = endDateRaw && String(endDateRaw).toLowerCase() !== "null" ? String(endDateRaw) : "";
       const endDateDisplay = endDateStr || "-";
 
-      const imgUrl = `https://kcusrobnqpiqqiycwser.supabase.co/storage/v1/object/public/client_images/${item.phone_number}.png`;
+      const imgUrl = `https://cdn.jsdelivr.net/gh/mramitdas/evolve@latest/docs/images/${item.image_url}.enc`;
 
       /* ✅ DESKTOP TABLE ROWS */
       const row = `
@@ -200,14 +337,10 @@ async function fetchTableData() {
                     <td class="px-6 py-4 serial">${index + 1}</td>
 
                     <th class="flex items-center px-6 py-4 whitespace-nowrap text-white">
-                        <img class="w-10 h-10 rounded-full" src="${imgUrl}">
+                        <img class="w-10 h-10 rounded-full enc-img" data-enc-url="${imgUrl}" src="" alt="avatar"/>
                         <div class="pl-3">
-                            <div class="text-base font-semibold name">${
-                              item.name
-                            }</div>
-                            <div class="text-gray-400 phone">${
-                              item.phone_number
-                            }</div>
+                            <div class="text-base font-semibold name">${item.name}</div>
+                            <div class="text-gray-400 phone">${item.phone_number}</div>
                         </div>
                     </th>
 
@@ -215,12 +348,8 @@ async function fetchTableData() {
 
                     <td class="px-6 py-4 status">
                         <div class="flex items-center gap-2">
-                            <span class="h-3 w-3 rounded-full ${
-                              isActive ? "bg-green-500" : "bg-red-500"
-                            }"></span>
-                            <span class="status-text ${
-                              isActive ? "text-green-400" : "text-red-400"
-                            }">
+                            <span class="h-3 w-3 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}"></span>
+                            <span class="status-text ${isActive ? "text-green-400" : "text-red-400"}">
                                 ${isActive ? "Active" : "Inactive"}
                             </span>
                         </div>
@@ -228,29 +357,33 @@ async function fetchTableData() {
                 </tr>
             `;
       tableBody.insertAdjacentHTML("beforeend", row);
+      // Decrypt and set desktop avatar
+      try {
+        const lastRow = tableBody.querySelector("tr:last-child img.enc-img");
+        if (lastRow) setDecryptedImg(lastRow, imgUrl, hexKey);
+      } catch {}
 
       /* ✅ MOBILE CARD VIEW */
       if (mobileList) {
         const card = `
           <div class="bg-gray-800 rounded-xl p-4 shadow flex items-center gap-4" data-status="${isActive ? "active" : "inactive"}" data-date="${endDateStr}" data-gender="${(item.gender || "").toLowerCase()}">
-              <div class="serial text-gray-400 font-bold text-lg w-6">${
-                index + 1
-              }</div>
+              <div class="serial text-gray-400 font-bold text-lg w-6">${index + 1}</div>
 
-              <img src="${imgUrl}" class="w-12 h-12 rounded-full object-cover"/>
+              <img data-enc-url="${imgUrl}" src="" class="w-12 h-12 rounded-full object-cover enc-img" alt="avatar"/>
 
               <div class="text-left">
                   <p class="text-white font-semibold text-lg">${item.name}</p>
-                  <p class="phone-mobile text-gray-400 text-sm">${
-                    item.phone_number
-                  }</p>
-                  <p class="${
-                    isActive ? "text-green-400" : "text-red-400"
-                  } text-xs mt-1">${endDateDisplay}</p>
+                  <p class="phone-mobile text-gray-400 text-sm">${item.phone_number}</p>
+                  <p class="${isActive ? "text-green-400" : "text-red-400"} text-xs mt-1">${endDateDisplay}</p>
               </div>
           </div>
         `;
         mobileList.insertAdjacentHTML("beforeend", card);
+        // Decrypt and set mobile avatar (last inserted)
+        try {
+          const lastCardImg = mobileList.querySelector("div:last-child img.enc-img");
+          if (lastCardImg) setDecryptedImg(lastCardImg, imgUrl, hexKey);
+        } catch {}
       }
     });
   } catch (err) {
