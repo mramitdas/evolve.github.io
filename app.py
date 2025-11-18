@@ -39,11 +39,16 @@ def get_clients():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT id, client_id, name, phone_number,
-               TO_CHAR(end_date, 'DD-FMMon-YYYY') AS end_date,
-               status, gender, image_url
-        FROM clients
-        ORDER BY status;
+    SELECT id,
+       client_id,
+       name,
+       phone_number,
+       TO_CHAR(end_date, 'DD-FMMon-YYYY') AS end_date,
+       status,
+       gender,
+       REPLACE(image_url::text, '-', '') AS image_url
+    FROM clients
+    ORDER BY status;
     """)
 
     rows = cursor.fetchall()
@@ -59,11 +64,17 @@ def get_client_by_id(client_id):
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT id, client_id, name, phone_number,
-               TO_CHAR(end_date, 'DD-FMMon-YYYY') AS end_date,
-               status, gender, image_url
-        FROM clients
-        WHERE client_id = %s;
+    SELECT id,
+       client_id,
+       name,
+       phone_number,
+       TO_CHAR(end_date, 'DD-FMMon-YYYY') AS end_date,
+       status,
+       gender,
+       REPLACE(image_url::text, '-', '') AS image_url
+    FROM clients
+    WHERE client_id = %s;
+
     """, (client_id,))
 
     row = cursor.fetchone()
