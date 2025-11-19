@@ -416,10 +416,11 @@ async function fetchTableData() {
                 </tr>
             `;
       tableBody.insertAdjacentHTML("beforeend", row);
-      // Decrypt and set desktop avatar
+      // Decrypt and set desktop avatar (target the just-inserted row safely)
       try {
-        const lastRow = tableBody.querySelector("tr:last-child img.enc-img");
-        if (lastRow) setDecryptedImg(lastRow, imgUrl, hexKey);
+        const insertedRow = tableBody.lastElementChild;
+        const lastRowImg = insertedRow?.querySelector("img.enc-img");
+        if (lastRowImg) setDecryptedImg(lastRowImg, imgUrl, hexKey);
       } catch {}
 
       /* ✅ MOBILE CARD VIEW */
@@ -448,12 +449,11 @@ async function fetchTableData() {
           </div>
         `;
         mobileList.insertAdjacentHTML("beforeend", card);
-        // Decrypt and set mobile avatar (last inserted)
+        // Decrypt and set mobile avatar (target the just-inserted card safely)
         try {
-          const lastCardImg = mobileList.querySelector(
-            "div:last-child img.enc-img"
-          );
-          if (lastCardImg) setDecryptedImg(lastCardImg, imgUrl, hexKey);
+          const insertedCard = mobileList.lastElementChild;
+          const imgEl = insertedCard?.querySelector("img.enc-img");
+          if (imgEl) setDecryptedImg(imgEl, imgUrl, hexKey);
         } catch {}
       }
     });
