@@ -2,6 +2,31 @@ import { loadConfig } from "./config.js";
 import { searchFragment } from "./searchFragment.js";
 let config = null;
 
+let tableInitialized = false;
+let preloadingStarted = false;
+let preloadedData = null;
+let preloadingPromise = null;
+let dataReady = false;
+
+// Kick off background data fetch as early as possible (before any UI work)
+if (!localStorage.getItem("loggedIn")) {
+  console.info("[preload] early data fetch: starting");
+  preloadingPromise = fetch("https://evolve-dzlb.onrender.com/clients")
+    .then((r) => r.json())
+    .then((d) => {
+      preloadedData = d;
+      console.info(
+        "[preload] early data fetch: resolved",
+        Array.isArray(d) ? d.length : d
+      );
+      return d;
+    })
+    .catch((e) => {
+      console.warn("[preload] early data fetch failed:", e);
+      return null;
+    });
+}
+
 (async () => {
   config = await loadConfig();
 })();
@@ -205,12 +230,20 @@ const app = document.getElementById("app");
 const navbar = document.getElementById("navbar");
 
 // ✅ Load table.html + after loading, fetch API automatically
-async function loadTablePage() {
-  loader.classList.remove("hidden");
+async function loadTablePage(options = {}) {
+  const background = !!options.background;
+  if (!background) loader.classList.remove("hidden");
 
   const response = await fetch("table.html");
-  const html = await response.text();
+  let html = await response.text();
+  if (background) {
+    // Strip the login-guard redirect from table.html so we can preload while not logged in
+    // This removes the first <script> block that checks localStorage.getItem("loggedIn")
+    html = html.replace(/<script>[\s\S]*?localStorage\.getItem\(\s*"loggedIn"\s*\)[\s\S]*?<\/script>/, "");
+    console.info("[preload] stripped login guard from table.html");
+  }
   app.innerHTML = html;
+  console.info("[preload] table.html injected (background:", background, ")");
 
   // ✅ Inject search UI from JS template (avoid Live Server HTML injection)
   const searchContainer = document.getElementById("searchContainer");
@@ -272,10 +305,11 @@ async function loadTablePage() {
   // ✅ Initialize Flowbite date range picker for dynamically injected content
   initDatepickers();
 
-  loader.classList.add("hidden");
+  if (!background) loader.classList.add("hidden");
 
   // ✅ Now fetch API data
   fetchTableData();
+  tableInitialized = true;
 }
 
 // ✅ Toggle filter dropdown (after HTML is loaded)
@@ -356,8 +390,40 @@ async function fetchTableData() {
   if (!tableBody) return;
 
   try {
-    const res = await fetch("https://evolve-dzlb.onrender.com/clients");
-    const data = await res.json();
+    let data = null;
+
+    if (preloadingPromise) {
+      try {
+        console.info("[fetch] awaiting preloadingPromise...");
+        data = await preloadingPromise;
+        console.info(
+          "[fetch] preloadingPromise resolved",
+          Array.isArray(data) ? data.length : data
+        );
+      } catch (e) {
+        console.warn("Background data promise failed:", e);
+        data = null;
+      }
+    }
+
+    if (!data && preloadedData) {
+      data = preloadedData;
+      console.info(
+        "[fetch] using cached preloadedData",
+        Array.isArray(data) ? data.length : data
+      );
+    }
+
+    if (!data) {
+      console.info("[fetch] performing live fetch (no preloaded data)");
+      const res = await fetch("https://evolve-dzlb.onrender.com/clients");
+      data = await res.json();
+      preloadedData = data;
+      console.info(
+        "[fetch] live fetch resolved",
+        Array.isArray(data) ? data.length : data
+      );
+    }
 
     tableBody.innerHTML = "";
     if (mobileList) mobileList.innerHTML = "";
@@ -457,6 +523,13 @@ async function fetchTableData() {
         } catch {}
       }
     });
+    console.info(
+      "[render] rendered rows:",
+      Array.isArray(data) ? data.length : 0,
+      "cards:",
+      mobileList ? (Array.isArray(data) ? data.length : 0) : 0
+    );
+    dataReady = true;
   } catch (err) {
     console.error("API Load Error:", err);
   }
@@ -473,7 +546,9 @@ loginBtn.onclick = async () => {
     navbar.classList.remove("hidden");
     localStorage.setItem("loggedIn", "true");
 
-    await loadTablePage();
+    if (!tableInitialized) {
+      await loadTablePage({ background: false });
+    }
   } else {
     errorModal.classList.remove("hidden");
   }
@@ -829,3 +904,20 @@ window.sortNameColumn = function () {
   nameAsc = !nameAsc;
   isSortingName = false;
 };
+
+function startBackgroundPreload() {
+  if (!localStorage.getItem("loggedIn") && !preloadingStarted) {
+    preloadingStarted = true;
+    console.info("[preload] DOM ready: injecting table in background");
+    loadTablePage({ background: true })
+      .then(() => console.info("[preload] background UI ready"))
+      .catch((e) => console.warn("Background preload failed:", e));
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", startBackgroundPreload);
+} else {
+  // DOM is already ready (module at end of body); start immediately
+  startBackgroundPreload();
+}
